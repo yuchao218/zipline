@@ -1389,19 +1389,19 @@ class H5MinuteBarUpdateReader(MinuteBarUpdateReader):
             major = updates['axis1']
             minor = updates['axis2']
 
+            # Our current version of h5py is unable to read the tz attr in the
+            # tests as it was written by HDFStore. This is fixed in version
+            # 2.10.0 of h5py, but that requires >=Python3.7, so until then we
+            # should be safe to assume UTC.
+            try:
+                tz = major.attrs['tz'].decode()
+            except OSError:
+                tz = 'UTC'
+
             self._panel = pd.Panel(
                 data=np.array(values).T,
                 items=np.array(items),
-                major_axis=pd.DatetimeIndex(
-                    major,
-                    # Our current version of h5py is unable to read the tz attr
-                    # as it was written by HDFStore. This is fixed in version
-                    # 2.10.0 of h5py, but that requires >=Python3.7, so until
-                    # then we should be safe to assume UTC.
-                    # tz=major.attrs['tz'].decode(),
-                    tz='UTC',
-                    freq='T',
-                ),
+                major_axis=pd.DatetimeIndex(major, tz=tz, freq='T'),
                 minor_axis=np.array(minor).astype('U'),
             )
 
